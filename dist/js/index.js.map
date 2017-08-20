@@ -1,0 +1,1 @@
+{"version":3,"sources":["index.js"],"names":["win","console","log","window"],"mappings":";;AAAA,CAAC,UAACA,GAAD,EAAS;AACRC,UAAQC,GAAR,CAAY,OAAZ;AACD,CAFD,EAEGC,MAFH","file":"index.js","sourcesContent":["((win) => {\n  console.log('hello')\n})(window)\n"]}

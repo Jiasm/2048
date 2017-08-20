@@ -1,0 +1,1 @@
+{"version":3,"sources":["base.scss"],"names":[],"mappings":"AAAA,IAAI,CAAC;EACH,KAAK,EAAE,GAAI,GACZ","file":"2048.css","sourcesContent":["body {\n  color: red;\n}\n"]}
