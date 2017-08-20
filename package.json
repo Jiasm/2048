@@ -4,7 +4,7 @@
   "description": "`2048`game",
   "main": "index.js",
   "scripts": {
-    "start": "anywhere -p 8080 -d dist"
+    "start": "anywhere -p 8080"
   },
   "repository": {
     "type": "git",

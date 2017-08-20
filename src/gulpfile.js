@@ -10,18 +10,18 @@
 
 const path = require('path')
 const appName = path.resolve(__dirname, '../').split('/').pop() // 项目的名称
-const publicPath = '../dist'                                    // 静态资源输出目录
+const publicPath = '../dist' // 静态资源输出目录
 
-const jsFiles = ['./js/*.js']                                   // js文件
-const cssFiles = ['./css/*.scss', './css/*.css']                // css文件
-const htmlFiles = ['./html/*.html']                             // html文件
-const imgFiles = ['./img/*.png', './img/*.jpg', './img/*.gif']  // img文件
-const watchPath = jsFiles.concat(cssFiles.concat(htmlFiles))    // 监听文件变化的路径
+const jsFiles = ['./js/*.js'] // js文件
+const cssFiles = ['./css/*.scss', './css/*.css'] // css文件
+const htmlFiles = ['./html/*.html'] // html文件
+const imgFiles = ['./img/*.png', './img/*.jpg', './img/*.gif'] // img文件
+const watchPath = jsFiles.concat(cssFiles.concat(htmlFiles)) // 监听文件变化的路径
 
-const jsOutput = `${publicPath}/js`                             // js输出目录
-const cssOutput = `${publicPath}/css`                           // css输出目录
-const imgOutput = `${publicPath}/img`                           // img输出目录
-const htmlOutput = publicPath                                   // html输出目录
+const jsOutput = `${publicPath}/js` // js输出目录
+const cssOutput = `${publicPath}/css` // css输出目录
+const imgOutput = `${publicPath}/img` // img输出目录
+const htmlOutput = '../' // html输出目录
 
 var gulp = require('gulp')
 var sass = require('gulp-sass')
