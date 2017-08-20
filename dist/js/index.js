@@ -1,6 +1,14 @@
 'use strict';
 
 (function (win) {
-  console.log('hello');
+  var GAME = win.GAME;
+
+
+  win.debug = true;
+  var game = new GAME(document.querySelector('#game-canvas'), {
+    size: 4
+  });
+
+  game.start();
 })(window);
 //# sourceMappingURL=index.js.map
