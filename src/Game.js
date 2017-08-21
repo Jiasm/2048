@@ -66,20 +66,25 @@ function initMatrix ({
  * @param  {String} direction 移动的位置
  * @param  {Array}  matrix    矩阵数据
  * @return {Array}            移动&新增节点后的矩阵
+ * @api    private
  */
 function moveMatrix ({direction, matrix}) {
   let len = matrix.length
   let end = len - 1
+
   // 上下方向的需要将二维数组转换行和列
   if (['top', 'bottom'].includes(direction)) {
     matrix = rotateMatrix({matrix})
   }
 
+  // 上、左方向直接反排矩阵的列数据
   if (['left', 'top'].includes(direction)) {
     matrix = reverseMatrix({matrix})
   }
 
+  // 创建新的容器
   let newMatrix = new Array(len).fill(0).map(_ => new Array(len).fill(0))
+
   matrix.forEach((row, rowIndex) => {
     for (let colIndex = end; colIndex > 0;) {
       let item = row[colIndex]
@@ -143,6 +148,7 @@ function moveMatrix ({direction, matrix}) {
  * 旋转矩阵，将横竖坐标转换，应对上下合并时操作的困难，先转换为左右合并
  * @param  {Array}  matrix 矩阵数据
  * @return {Array}         转变横竖坐标后的矩阵
+ * @api    private
  */
 function rotateMatrix ({matrix}) {
   let size = matrix.length
@@ -160,6 +166,7 @@ function rotateMatrix ({matrix}) {
  * 将矩阵元素反排，用于合并
  * @param  {Array}  matrix 矩阵数据
  * @return {Array}         反排后的矩阵
+ * @api    private
  */
 function reverseMatrix ({matrix}) {
   return matrix.map(row => row.reverse())
@@ -189,6 +196,7 @@ function addItem2Matrix ({matrix}) {
  * 获取所有item为空的集合
  * @param  {Array} matrix 矩阵数据
  * @return {Array}        所有为空的矩阵下标组成的数组
+ * @api    private
  */
 function getEmptyMatrixItems ({matrix}) {
   let indexArr = []
