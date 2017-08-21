@@ -1,4 +1,4 @@
-const defaultVals = [{
+export const defaultVals = [{
   background: '#eee4da',
   label: 2,
   color: '#000'
@@ -34,7 +34,3 @@ const defaultVals = [{
   background: '#edc12f',
   label: 2048
 }]
-
-window.CONFIG = {
-  defaultVals
-}
