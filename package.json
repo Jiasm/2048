@@ -22,5 +22,8 @@
     "eslint-plugin-promise": "^3.3.0",
     "eslint-plugin-standard": "^2.0.1",
     "webpack": "^3.5.5"
+  },
+  "dependencies": {
+    "babel-polyfill": "^6.26.0"
   }
 }
