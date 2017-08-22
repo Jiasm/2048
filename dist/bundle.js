@@ -9098,26 +9098,27 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 window.debug = true
-let game = __WEBPACK_IMPORTED_MODULE_0__GameController__["a" /* default */].init({
-  size: 16
+let gameController = __WEBPACK_IMPORTED_MODULE_0__GameController__["a" /* default */].init({
+  size: 6,
+  ele: document.querySelector('#game-canvas')
 })
 
-game.start()
+gameController.start()
 
 // test code
 window.addEventListener('keyup', ({keyCode}) => {
   switch (keyCode) {
     case 87: // 上
-      game.move({direction: 'top'})
+      gameController.move({direction: 'top'})
       break
     case 68: // 右
-      game.move({direction: 'right'})
+      gameController.move({direction: 'right'})
       break
     case 83: // 下
-      game.move({direction: 'bottom'})
+      gameController.move({direction: 'bottom'})
       break
     case 65: // 左
-      game.move({direction: 'left'})
+      gameController.move({direction: 'left'})
       break
   }
 })
@@ -9130,24 +9131,32 @@ window.addEventListener('keyup', ({keyCode}) => {
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Base__ = __webpack_require__(124);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Game__ = __webpack_require__(333);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__GameRender__ = __webpack_require__(335);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_3__Config__ = __webpack_require__(336);
+
+
 
 
 
 class GameController extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] {
-  constructor ({size = 4}) {
+  constructor ({ele, size = __WEBPACK_IMPORTED_MODULE_3__Config__["a" /* defaultConfig */].size}) {
     super()
 
     this.size = size
+    this.ele = ele
 
     this.game = new __WEBPACK_IMPORTED_MODULE_1__Game__["a" /* default */]({size})
+    this.gameRender = new __WEBPACK_IMPORTED_MODULE_2__GameRender__["a" /* default */]({ele})
   }
 
   start () {
-    this.game.start()
+    let matrix = this.matrix = this.game.start()
+    this.gameRender.render({matrix})
   }
 
   move ({direction}) {
-    this.game.move({direction})
+    let matrix = this.matrix = this.game.move({direction})
+    this.gameRender.render({matrix})
   }
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = GameController;
@@ -9161,45 +9170,49 @@ class GameController extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Base__ = __webpack_require__(124);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Utils__ = __webpack_require__(334);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Config__ = __webpack_require__(336);
 
 
 
-const directionMap = {
-  top: 'top',
-  1: 'top',
-  right: 'right',
-  2: 'right',
-  bottom: 'bottom',
-  3: 'bottom',
-  left: 'left',
-  4: 'left'
-}
 
 class Game extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] {
   constructor ({
-    size = 4
+    size = __WEBPACK_IMPORTED_MODULE_2__Config__["a" /* defaultConfig */].size
   } = {}) {
     super()
-    if (size < 4) throw new Error('Error', '`size` should be greater than 4')
+    if (size < __WEBPACK_IMPORTED_MODULE_2__Config__["a" /* defaultConfig */].size) throw new Error('Error', `\`size\` should be greater than ${__WEBPACK_IMPORTED_MODULE_2__Config__["a" /* defaultConfig */].size}`)
 
     this.size = size
   }
 
+  /**
+   * 初始化矩阵
+   * @return {Array} 矩阵数据
+   * @api    public
+   */
   start () {
     let {size} = this
-    this.matrix = initMatrix({
+    let matrix = this.matrix = initMatrix({
       size
     })
+
+    return matrix
   }
 
+  /**
+   * 移动矩阵
+   * @param  {String} direction 移动的方向
+   * @return {Array} 矩阵数据
+   * @api    public
+   */
   move ({direction}) {
-    let matrix = this.matrix = moveMatrix({
-      direction: directionMap[direction],
+    let matrix = moveMatrix({
+      direction: __WEBPACK_IMPORTED_MODULE_2__Config__["d" /* directionMap */][direction],
       matrix: this.matrix
     })
-    this.matrix = addItem2Matrix({matrix})
+    this.matrix = matrix = addItem2Matrix({matrix})
 
-    Object(__WEBPACK_IMPORTED_MODULE_1__Utils__["a" /* log */])(matrix)
+    Object(__WEBPACK_IMPORTED_MODULE_1__Utils__["b" /* logMatrix */])(matrix)
     return matrix
   }
 }
@@ -9221,7 +9234,7 @@ function initMatrix ({
   matrix = addItem2Matrix({matrix})
   matrix = addItem2Matrix({matrix})
 
-  Object(__WEBPACK_IMPORTED_MODULE_1__Utils__["a" /* log */])(matrix)
+  Object(__WEBPACK_IMPORTED_MODULE_1__Utils__["b" /* logMatrix */])(matrix)
 
   return matrix
 }
@@ -9238,12 +9251,12 @@ function moveMatrix ({direction, matrix}) {
   let end = len - 1
 
   // 上下方向的需要将二维数组转换行和列
-  if (['top', 'bottom'].includes(direction)) {
+  if ([__WEBPACK_IMPORTED_MODULE_2__Config__["d" /* directionMap */].top, __WEBPACK_IMPORTED_MODULE_2__Config__["d" /* directionMap */].bottom].includes(direction)) {
     matrix = rotateMatrix({matrix})
   }
 
   // 上、左方向直接反排矩阵的列数据
-  if (['left', 'top'].includes(direction)) {
+  if ([__WEBPACK_IMPORTED_MODULE_2__Config__["d" /* directionMap */].left, __WEBPACK_IMPORTED_MODULE_2__Config__["d" /* directionMap */].top].includes(direction)) {
     matrix = reverseMatrix({matrix})
   }
 
@@ -9258,6 +9271,7 @@ function moveMatrix ({direction, matrix}) {
       let itemBefore
       do {
         itemBefore = row[--beforeIndex]
+        // 如果没有查找到有效元素并且没有迭代到行首，则会继续迭代，直到拿到一个有效元素或者迭代到行首
       } while (beforeIndex >= 0 && !itemBefore)
 
       beforeIndex = Math.max(0, beforeIndex)
@@ -9297,12 +9311,12 @@ function moveMatrix ({direction, matrix}) {
   })
 
   // 左上方向需要还原反排
-  if (['left', 'top'].includes(direction)) {
+  if ([__WEBPACK_IMPORTED_MODULE_2__Config__["d" /* directionMap */].left, __WEBPACK_IMPORTED_MODULE_2__Config__["d" /* directionMap */].top].includes(direction)) {
     newMatrix = reverseMatrix({matrix: newMatrix})
   }
 
   // 上下方向的需要将二维数组转换行和列
-  if (['top', 'bottom'].includes(direction)) {
+  if ([__WEBPACK_IMPORTED_MODULE_2__Config__["d" /* directionMap */].top, __WEBPACK_IMPORTED_MODULE_2__Config__["d" /* directionMap */].bottom].includes(direction)) {
     newMatrix = rotateMatrix({matrix: newMatrix})
   }
 
@@ -9468,10 +9482,185 @@ function random (range) {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony export (immutable) */ __webpack_exports__["b"] = logMatrix;
 /* harmony export (immutable) */ __webpack_exports__["a"] = log;
-function log (arr) {
-  window.debug && console.log(JSON.stringify(arr).replace(/(],)/g, '],\n').replace(/\[|\]/g, '').replace(/,/g, '|') + '| ')
+function logMatrix (arr) {
+  log(JSON.stringify(arr).replace(/(],)/g, '],\n').replace(/\[|\]/g, '').replace(/,/g, '|') + '| ')
 }
+
+function log (...arg) {
+  window.debug && console.log(...arg)
+}
+
+
+/***/ }),
+/* 335 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__Base__ = __webpack_require__(124);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Config__ = __webpack_require__(336);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__Utils__ = __webpack_require__(334);
+
+
+
+
+class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] {
+  constructor ({ele, size, gap}) {
+    super()
+
+    this.$canvas = ele
+    this.context = ele.getContext('2d')
+    this.gap = gap || (gap = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].gap)
+    this.size = size || (size = __WEBPACK_IMPORTED_MODULE_1__Config__["a" /* defaultConfig */].size)
+
+    // 计算出一个方块的宽高
+    // 暂时直接除以size 后期要改为正方形的
+    this.itemWidth = (ele.width - gap * 2) / size
+    this.itemHeight = (ele.height - gap * 2) / size
+    this.fontSize = this.itemWidth / 2
+
+    Object(__WEBPACK_IMPORTED_MODULE_2__Utils__["a" /* log */])(`
+      itemWidth: ${this.itemWidth}
+      itemHeight: ${this.itemHeight}
+    `)
+  }
+  render ({
+    matrix,
+    beforeMatrix
+  }) {
+    let {
+      $canvas,
+      context,
+      gap,
+      itemWidth,
+      itemHeight,
+      fontSize
+    } = this
+
+    let {
+      width,
+      height
+    } = $canvas
+
+    // render layout
+
+    context.fillStyle = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].borderColor
+    context.fillRect(0, 0, width, height)
+    context.lineWidth = gap
+    context.strokeStyle = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].borderColor
+    context.strokeRect(0, 0, width, height)
+
+    // render matrix
+
+    matrix.forEach((row, rowIndex) => {
+      row.forEach((col, colIndex) => {
+        let x = colIndex * itemWidth + gap
+        let y = rowIndex * itemHeight + gap
+
+        let itemInfo = __WEBPACK_IMPORTED_MODULE_1__Config__["c" /* defaultVals */][col]
+
+        context.fillStyle = itemInfo.background
+        context.fillRect(x, y, itemWidth, itemHeight)
+
+        context.fillStyle = itemInfo.color
+        context.font = `${fontSize}px sans-serif`
+        context.textAlign = 'center'
+        context.textBaseline = 'middle'
+        context.fillText(itemInfo.label, x + itemWidth / 2, y + itemHeight / 2)
+
+        context.strokeStyle = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].borderColor
+        context.strokeRect(x, y, itemWidth, itemHeight)
+      })
+    })
+  }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = GameRender;
+
+
+
+/***/ }),
+/* 336 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+const defaultConfig = {
+  size: 6
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = defaultConfig;
+
+
+const defaultRenderConfig = {
+  gap: 4,
+  borderColor: '#8f7a66'
+}
+/* harmony export (immutable) */ __webpack_exports__["b"] = defaultRenderConfig;
+
+
+const defaultVals = [{
+  background: '#ccc0b3',
+  label: '',
+  color: '#000'
+}, {
+  background: '#eee4da',
+  label: 2,
+  color: '#000'
+}, {
+  background: '#ece0c8',
+  label: 4,
+  color: '#000'
+}, {
+  background: '#f3b179',
+  label: 8,
+  color: '#fff'
+}, {
+  background: '#f59563',
+  label: 16,
+  color: '#fff'
+}, {
+  background: '#f67c5f',
+  label: 32,
+  color: '#fff'
+}, {
+  background: '#f65e3c',
+  label: 64,
+  color: '#fff'
+}, {
+  background: '#edce71',
+  label: 128,
+  color: '#fff'
+}, {
+  background: '#eccb61',
+  label: 256,
+  color: '#fff'
+}, {
+  background: '#edc750',
+  label: 512,
+  color: '#fff'
+}, {
+  background: '#edc631',
+  label: 1024,
+  color: '#fff'
+}, {
+  background: '#edc12f',
+  label: 2048,
+  color: '#fff'
+}]
+/* harmony export (immutable) */ __webpack_exports__["c"] = defaultVals;
+
+
+const directionMap = {
+  top: 'top',
+  1: 'top',
+  right: 'right',
+  2: 'right',
+  bottom: 'bottom',
+  3: 'bottom',
+  left: 'left',
+  4: 'left'
+}
+/* harmony export (immutable) */ __webpack_exports__["d"] = directionMap;
+
 
 
 /***/ })

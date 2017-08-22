@@ -1,26 +1,27 @@
 import GameController from './GameController'
 
 window.debug = true
-let game = GameController.init({
-  size: 16
+let gameController = GameController.init({
+  size: 6,
+  ele: document.querySelector('#game-canvas')
 })
 
-game.start()
+gameController.start()
 
 // test code
 window.addEventListener('keyup', ({keyCode}) => {
   switch (keyCode) {
     case 87: // 上
-      game.move({direction: 'top'})
+      gameController.move({direction: 'top'})
       break
     case 68: // 右
-      game.move({direction: 'right'})
+      gameController.move({direction: 'right'})
       break
     case 83: // 下
-      game.move({direction: 'bottom'})
+      gameController.move({direction: 'bottom'})
       break
     case 65: // 左
-      game.move({direction: 'left'})
+      gameController.move({direction: 'left'})
       break
   }
 })

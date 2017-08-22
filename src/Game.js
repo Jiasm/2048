@@ -1,42 +1,45 @@
 import Base from './Base'
-import {log} from './Utils'
-
-const directionMap = {
-  top: 'top',
-  1: 'top',
-  right: 'right',
-  2: 'right',
-  bottom: 'bottom',
-  3: 'bottom',
-  left: 'left',
-  4: 'left'
-}
+import {logMatrix} from './Utils'
+import {defaultConfig, directionMap} from './Config'
 
 export default class Game extends Base {
   constructor ({
-    size = 4
+    size = defaultConfig.size
   } = {}) {
     super()
-    if (size < 4) throw new Error('Error', '`size` should be greater than 4')
+    if (size < defaultConfig.size) throw new Error('Error', `\`size\` should be greater than ${defaultConfig.size}`)
 
     this.size = size
   }
 
+  /**
+   * 初始化矩阵
+   * @return {Array} 矩阵数据
+   * @api    public
+   */
   start () {
     let {size} = this
-    this.matrix = initMatrix({
+    let matrix = this.matrix = initMatrix({
       size
     })
+
+    return matrix
   }
 
+  /**
+   * 移动矩阵
+   * @param  {String} direction 移动的方向
+   * @return {Array} 矩阵数据
+   * @api    public
+   */
   move ({direction}) {
-    let matrix = this.matrix = moveMatrix({
+    let matrix = moveMatrix({
       direction: directionMap[direction],
       matrix: this.matrix
     })
-    this.matrix = addItem2Matrix({matrix})
+    this.matrix = matrix = addItem2Matrix({matrix})
 
-    log(matrix)
+    logMatrix(matrix)
     return matrix
   }
 }
@@ -56,7 +59,7 @@ function initMatrix ({
   matrix = addItem2Matrix({matrix})
   matrix = addItem2Matrix({matrix})
 
-  log(matrix)
+  logMatrix(matrix)
 
   return matrix
 }
@@ -73,12 +76,12 @@ function moveMatrix ({direction, matrix}) {
   let end = len - 1
 
   // 上下方向的需要将二维数组转换行和列
-  if (['top', 'bottom'].includes(direction)) {
+  if ([directionMap.top, directionMap.bottom].includes(direction)) {
     matrix = rotateMatrix({matrix})
   }
 
   // 上、左方向直接反排矩阵的列数据
-  if (['left', 'top'].includes(direction)) {
+  if ([directionMap.left, directionMap.top].includes(direction)) {
     matrix = reverseMatrix({matrix})
   }
 
@@ -93,6 +96,7 @@ function moveMatrix ({direction, matrix}) {
       let itemBefore
       do {
         itemBefore = row[--beforeIndex]
+        // 如果没有查找到有效元素并且没有迭代到行首，则会继续迭代，直到拿到一个有效元素或者迭代到行首
       } while (beforeIndex >= 0 && !itemBefore)
 
       beforeIndex = Math.max(0, beforeIndex)
@@ -132,12 +136,12 @@ function moveMatrix ({direction, matrix}) {
   })
 
   // 左上方向需要还原反排
-  if (['left', 'top'].includes(direction)) {
+  if ([directionMap.left, directionMap.top].includes(direction)) {
     newMatrix = reverseMatrix({matrix: newMatrix})
   }
 
   // 上下方向的需要将二维数组转换行和列
-  if (['top', 'bottom'].includes(direction)) {
+  if ([directionMap.top, directionMap.bottom].includes(direction)) {
     newMatrix = rotateMatrix({matrix: newMatrix})
   }
 
