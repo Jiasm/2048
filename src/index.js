@@ -2,7 +2,7 @@ import GameController from './GameController'
 
 window.debug = true
 let game = GameController.init({
-  size: 4
+  size: 16
 })
 
 game.start()

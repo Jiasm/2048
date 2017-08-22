@@ -9099,7 +9099,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 window.debug = true
 let game = __WEBPACK_IMPORTED_MODULE_0__GameController__["a" /* default */].init({
-  size: 4
+  size: 16
 })
 
 game.start()
