@@ -9125,13 +9125,17 @@ window.addEventListener('keyup', ({keyCode}) => {
 
 let startPoint = null
 let endPoint = null
+let operateTime
 
 window.addEventListener('touchstart', (e) => {
+  if (operateTime && new Date() - operateTime < 500) return
+
   startPoint = {
     x: e.touches[0].screenX,
     y: e.touches[0].screenY
   }
   endPoint = null
+  operateTime = new Date()
 })
 
 window.addEventListener('touchend', (e) => {
@@ -9141,17 +9145,22 @@ window.addEventListener('touchend', (e) => {
   }
 
   if (startPoint && endPoint) {
-    switch (true) {
-      case startPoint.y > endPoint.y: // 上
+    let topOffset = startPoint.y - endPoint.y
+    let rightOffset = endPoint.x - startPoint.x
+    let bottomOffset = endPoint.y - startPoint.y
+    let leftOffset = startPoint.x - endPoint.x
+
+    switch (Math.max.apply(null, [topOffset, rightOffset, bottomOffset, leftOffset])) {
+      case topOffset: // 上
         gameController.move({direction: 'top'})
         break
-      case startPoint.x < endPoint.x: // 右
+      case rightOffset: // 右
         gameController.move({direction: 'right'})
         break
-      case startPoint.y < endPoint.y: // 下
+      case bottomOffset: // 下
         gameController.move({direction: 'bottom'})
         break
-      case startPoint.x > endPoint.x: // 左
+      case leftOffset: // 左
         gameController.move({direction: 'left'})
         break
     }
