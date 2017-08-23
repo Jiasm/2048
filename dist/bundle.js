@@ -3813,7 +3813,7 @@ module.exports = Math.scale || function scale(x, inLow, inHigh, outLow, outHigh)
 /* harmony export (immutable) */ __webpack_exports__["b"] = logMatrix;
 /* harmony export (immutable) */ __webpack_exports__["a"] = log;
 function logMatrix (arr) {
-  log(JSON.stringify(arr).replace(/(],)/g, '],\n').replace(/\[|\]/g, '').replace(/,/g, '|') + '| ')
+  log(JSON.stringify(arr.map(row => row.map(col => col.value))).replace(/(],)/g, '],\n').replace(/\[|\]/g, '').replace(/,/g, '|') + '| ')
 }
 
 function log (...arg) {
@@ -9264,19 +9264,19 @@ class GameController extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default 
 
     let self = this
 
-    window.addEventListener('keyup', ({keyCode}) => {
+    window.addEventListener('keyup', async ({keyCode}) => {
       switch (keyCode) {
         case 87: // 上
-          self.move({direction: 'top'})
+          await self.move({direction: 'top'})
           break
         case 68: // 右
-          self.move({direction: 'right'})
+          await self.move({direction: 'right'})
           break
         case 83: // 下
-          self.move({direction: 'bottom'})
+          await self.move({direction: 'bottom'})
           break
         case 65: // 左
-          self.move({direction: 'left'})
+          await self.move({direction: 'left'})
           break
       }
     })
@@ -9298,7 +9298,7 @@ class GameController extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default 
         // operateTime = new Date()
       })
 
-      window.addEventListener('touchend', (e) => {
+      window.addEventListener('touchend', async (e) => {
         endPoint = {
           x: e.changedTouches[0].screenX,
           y: e.changedTouches[0].screenY
@@ -9316,16 +9316,16 @@ class GameController extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default 
           if (maxOffset > 10) {
             switch (maxOffset) {
               case topOffset: // 上
-                self.move({direction: 'top'})
+                await self.move({direction: 'top'})
                 break
               case rightOffset: // 右
-                self.move({direction: 'right'})
+                await self.move({direction: 'right'})
                 break
               case bottomOffset: // 下
-                self.move({direction: 'bottom'})
+                await self.move({direction: 'bottom'})
                 break
               case leftOffset: // 左
-                self.move({direction: 'left'})
+                await self.move({direction: 'left'})
                 break
             }
 
@@ -9342,14 +9342,14 @@ class GameController extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default 
     }
   }
 
-  start () {
+  async start () {
     let matrix = this.matrix = this.game.start()
-    this.gameRender.render({matrix})
+    await this.gameRender.render({matrix})
   }
 
-  move ({direction}) {
+  async move ({direction}) {
     let matrix = this.matrix = this.game.move({direction})
-    this.gameRender.render({matrix})
+    await this.gameRender.render({matrix})
   }
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = GameController;
@@ -9441,7 +9441,7 @@ class Game extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] {
 function initMatrix ({
   size
 }) {
-  let matrix = new Array(size).fill(0).map(_ => new Array(size).fill(0))
+  let matrix = new Array(size).fill(0).map(_ => new Array(size).fill({value: 0}))
 
   matrix = addItem2Matrix({matrix})
   matrix = addItem2Matrix({matrix})
@@ -9473,7 +9473,7 @@ function moveMatrix ({direction, matrix}) {
   }
 
   // 创建新的容器
-  let newMatrix = new Array(len).fill(0).map(_ => new Array(len).fill(0))
+  let newMatrix = new Array(len).fill(0).map(_ => new Array(len).fill({value: 0}))
 
   let canMove = false
 
@@ -9481,44 +9481,68 @@ function moveMatrix ({direction, matrix}) {
     for (let colIndex = end; colIndex > 0;) {
       let item = row[colIndex]
 
+      delete item.cursor
+      delete item.merge
+
       let beforeIndex = colIndex
       let itemBefore
       do {
         itemBefore = row[--beforeIndex]
         // 如果没有查找到有效元素并且没有迭代到行首，则会继续迭代，直到拿到一个有效元素或者迭代到行首
-      } while (beforeIndex >= 0 && !itemBefore)
+      } while (beforeIndex >= 0 && !itemBefore.value)
 
       beforeIndex = Math.max(0, beforeIndex)
 
       let range = 0
 
+      // 移动只会触发两种动作
+      // 1. 移动
+      // 2. 合并
+
       // 当前节点为空
-      if (!item) {
+      if (!item || !item.value) {
         // 如果往前不能查找到存在值的元素，说明这一行已经空了，直接跳过
-        if (!itemBefore) {
+        if (!itemBefore || !itemBefore.value) {
           colIndex = 0
           continue
         } else {
           // 否则将第一个存在值的元素放到当前下标 并删除该元素原来位置-目前为止中间所有的空格
           row[colIndex] = itemBefore
-          range = colIndex - beforeIndex
-          row.splice(beforeIndex, range) // 删除前一个
-          row = new Array(range).fill(0).concat(row)  // 将所有元素下标递增
+          range = colIndex - beforeIndex  // 获取本次移动跨过的长度
+          row.splice(beforeIndex, range) // 删除这区间内所有的空格
+          row = new Array(range).fill({value: 0}).concat(row)  // 前边填充新的数据，将所有元素下标递增
           canMove = true
           continue
         }
       } else {
         // 当前节点存在元素&与查找到的第一个元素相等，我们需要将这两项进行相加并删除前一个元素
-        if (item === itemBefore) {
-          row[colIndex] = (+item + 1)
-          range = colIndex - beforeIndex
-          colIndex -= range
+        if (itemBefore && item.value === itemBefore.value) {
+          row[colIndex] = {
+            value: item.value + 1,
+            uuid: uuid(),
+            cursor: item.uuid,
+            merge: itemBefore.uuid
+          }
+          range = colIndex - beforeIndex  // 获取本次合并跨过的长度
+          colIndex -= range // 合并的话，直接跳过中间跨过的区间，因为这区间内肯定不会产生这两次动作
           row.splice(beforeIndex, range) // 删除前一个
-          row = new Array(range).fill(0).concat(row)  // 将所有元素下标递增
+          row = new Array(range).fill({value: 0}).concat(row)  // 将所有元素下标递增
           canMove = true
           continue
         }
       }
+
+      // 移动后循环的游标不变，因为只是进行了一次合并
+      // 比如矩阵数据如下
+      // 1 0 0 1 0
+      //         ^
+      // 这时移动后变为
+      // 0 1 0 0 1
+      //         ^
+      // 我们仍然需要在当前下标进行逻辑处理，因为接下来我们会进行一次合并的处理
+      // 0 0 0 0 2
+      //   ^
+      // 合并后游标可以直接跳到这里，因为合并的产生意味着中间全部是空的元素
 
       // 其余情况则继续向前查找
       colIndex--
@@ -9585,7 +9609,10 @@ function addItem2Matrix ({matrix}) {
   let randomIndex = random(indexArr.length - 1)
 
   let [row, col] = indexArr[randomIndex].split('-')
-  matrix[row][col] = 1
+  matrix[row][col] = {
+    value: 1,
+    uuid: uuid()
+  }
 
   return matrix
 }
@@ -9601,7 +9628,7 @@ function getEmptyMatrixItems ({matrix}) {
 
   matrix.forEach((row, rowIndex) => {
     row.forEach((col, colIndex) => {
-      if (!col) {
+      if (!col.value) {
         indexArr.push(`${rowIndex}-${colIndex}`)
       }
     })
@@ -9618,6 +9645,15 @@ function getEmptyMatrixItems ({matrix}) {
  */
 function random (range) {
   return Math.random() * range | 0
+}
+
+/**
+ * 生成一个随机数
+ * 用来标识item的唯一性
+ * @return {String} 随机数
+ */
+function uuid () {
+  return Math.abs(Math.random() * 1e10 | 0).toString(32)
 }
 
 // 0 1 1 1 1 => 4 | found 3 | merge 3 & 4 | change cursor to 4 - (4 - 3)
@@ -9728,13 +9764,13 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
       itemHeight: ${this.itemHeight}
     `)
   }
-  render ({
-    matrix,
-    beforeMatrix
+  async render ({
+    matrix
   }) {
     let {
       $canvas,
       context,
+      beforeMatrix, // 上次渲染时的矩阵
       gap,
       itemWidth,
       itemHeight,
@@ -9746,42 +9782,206 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
       height
     } = $canvas
 
-    // render layout
+    let animationPath = buildAnimationPath({beforeMatrix, matrix})
 
-    context.fillStyle = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].borderColor
-    context.fillRect(0, 0, width, height)
-    context.lineWidth = gap
-    context.strokeStyle = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].borderColor
-    context.strokeRect(0, 0, width, height)
+    let count = 0
+    let maxKeyLength = 12
 
-    // render matrix
+    await new Promise((resolve) => {
+      let animate = () => {
+        // render layout
 
-    matrix.forEach((row, rowIndex) => {
-      row.forEach((col, colIndex) => {
-        let x = colIndex * itemWidth + gap
-        let y = rowIndex * itemHeight + gap
+        let percent = (count / maxKeyLength)
 
-        let itemInfo = __WEBPACK_IMPORTED_MODULE_1__Config__["c" /* defaultVals */][col]
-
-        context.fillStyle = itemInfo.background
-        context.fillRect(x, y, itemWidth, itemHeight)
-
-        context.fillStyle = itemInfo.color
-
-        let font = fontSize / (Math.max(String(itemInfo.label).length - 1, 2))
-        context.font = `${font}px sans-serif`
-        context.textAlign = 'center'
-        context.textBaseline = 'middle'
-        context.fillText(itemInfo.label, x + itemWidth / 2, y + itemHeight / 2)
-
+        context.fillStyle = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].borderColor
+        context.fillRect(0, 0, width, height)
+        context.lineWidth = gap
         context.strokeStyle = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].borderColor
-        context.strokeRect(x, y, itemWidth, itemHeight)
-      })
+        context.strokeRect(0, 0, width, height)
+
+        // render matrix
+        // 先渲染没有动画的item
+        matrix.forEach((row, rowIndex) => {
+          row.forEach((col, colIndex) => {
+            let x = colIndex * itemWidth + gap
+            let y = rowIndex * itemHeight + gap
+
+            let itemInfo = __WEBPACK_IMPORTED_MODULE_1__Config__["c" /* defaultVals */][col.value]
+            let animationInfo = animationPath[col.uuid]
+
+            if (!animationInfo) {
+              context.fillStyle = itemInfo.background
+              context.fillRect(x, y, itemWidth, itemHeight)
+
+              context.fillStyle = itemInfo.color
+
+              let font = fontSize / (Math.max(String(itemInfo.label).length - 1, 2))
+              context.font = `${font}px sans-serif`
+              context.textAlign = 'center'
+              context.textBaseline = 'middle'
+              context.fillText(itemInfo.label, x + itemWidth / 2, y + itemHeight / 2)
+
+              context.strokeStyle = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].borderColor
+              context.strokeRect(x, y, itemWidth, itemHeight)
+            }
+          })
+        })
+
+        // 然后对有动画的item进行渲染
+        // 动画也要分开处理。。先处理移动的动画，然后处理新增的动画
+
+        matrix.forEach((row, rowIndex) => {
+          row.forEach((col, colIndex) => {
+            let x = colIndex * itemWidth + gap
+            let y = rowIndex * itemHeight + gap
+
+            let itemInfo = __WEBPACK_IMPORTED_MODULE_1__Config__["c" /* defaultVals */][col.value]
+            let animationInfo = animationPath[col.uuid]
+
+            if (!animationInfo) {
+              return
+            } else if (animationInfo.type === 'move') {
+              let localX = x
+              let localY = y
+              context.fillStyle = itemInfo.background
+              context.fillRect(localX, localY, itemWidth, itemHeight)
+
+              context.fillStyle = itemInfo.color
+
+              let font = fontSize / (Math.max(String(itemInfo.label).length - 1, 2))
+              context.font = `${font}px sans-serif`
+              context.textAlign = 'center'
+              context.textBaseline = 'middle'
+              context.fillText(itemInfo.label, localX + itemWidth / 2, localY + itemHeight / 2)
+
+              context.strokeStyle = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].borderColor
+              context.strokeRect(localX, localY, itemWidth, itemHeight)
+            }
+          })
+        })
+        let localItemWidth = itemWidth * percent
+        let localItemHeight = itemHeight * percent
+        matrix.forEach((row, rowIndex) => {
+          row.forEach((col, colIndex) => {
+            let x = colIndex * itemWidth + gap
+            let y = rowIndex * itemHeight + gap
+
+            let itemInfo = __WEBPACK_IMPORTED_MODULE_1__Config__["c" /* defaultVals */][col.value]
+            let animationInfo = animationPath[col.uuid]
+
+            if (!animationInfo) {
+              return
+            } else if (animationInfo.type === 'new') {
+              let localX = x + itemWidth / 2 - itemWidth / 2 * percent
+              let localY = y + itemHeight / 2 - itemHeight / 2 * percent
+              context.fillStyle = itemInfo.background
+              context.fillRect(localX, localY, localItemWidth, localItemHeight)
+
+              context.fillStyle = itemInfo.color
+
+              let font = fontSize / (Math.max(String(itemInfo.label).length - 1, 2))
+              context.font = `${font * percent}px sans-serif`
+              context.textAlign = 'center'
+              context.textBaseline = 'middle'
+              context.fillText(itemInfo.label, localX + localItemWidth / 2, localY + localItemHeight / 2)
+
+              context.strokeStyle = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].borderColor
+              context.strokeRect(localX, localY, localItemWidth, localItemHeight)
+            }
+          })
+        })
+
+        if (count++ >= maxKeyLength) resolve()
+        else requestAnimationFrame(animate)
+      }
+
+      requestAnimationFrame(animate)
     })
+
+    this.beforeMatrix = matrix
   }
 }
 /* harmony export (immutable) */ __webpack_exports__["a"] = GameRender;
 
+
+/**
+ * 根据两次矩阵对比结果，生成动画轨迹
+ * @param  {Array}  matrix       目前的矩阵数据
+ * @param  {Array}  beforeMatrix 上一次的矩阵数据
+ * @return {Object}              生成后的以矩阵item`uuid`为key的JSON数据格式
+ */
+function buildAnimationPath ({
+  matrix,
+  beforeMatrix
+}) {
+  let result = {}
+  // 说明为第一次
+  // 所有在matrix中匹配到的值都将塞一个new进去，表示是新出现的item
+  if (!beforeMatrix) {
+    matrix.forEach((row, rowIndex) => {
+      row.forEach((col, colIndex) => {
+        if (col && col.uuid) {
+          result[col.uuid] = {
+            type: 'new'
+          }
+        }
+      })
+    })
+  } else {
+    let beforeMatrixPath = buildLocationMap(beforeMatrix)
+    let beforeMatrixPathUuidList = Object.keys(beforeMatrixPath)
+    let matrixPath = buildLocationMap(matrix)
+
+    Object.entries(matrixPath).forEach(([uuid, item]) => {
+      // 说明是一个新的item
+      if (!beforeMatrixPathUuidList.includes(uuid)) {
+        result[uuid] = {
+          type: 'new'
+        }
+        // 说明是通过合并生成的
+        // 需要进行额外的处理
+        if (item.cursor && item.merge) {
+          result[item.cursor] = {
+            type: 'move',
+            rowIndex: item.rowIndex,
+            colIndex: item.colIndex
+          }
+          result[item.merge] = {
+            type: 'move',
+            rowIndex: item.rowIndex,
+            colIndex: item.colIndex
+          }
+        }
+      } else {
+        result[uuid] = {
+          type: 'move',
+          rowIndex: item.rowIndex,
+          colIndex: item.colIndex
+        }
+      }
+    })
+  }
+
+  return result
+}
+
+function buildLocationMap (matrix) {
+  let result = {}
+  matrix.forEach((row, rowIndex) => {
+    row.forEach((col, colIndex) => {
+      if (col && col.uuid) {
+        result[col.uuid] = {
+          rowIndex,
+          colIndex,
+          cursor: col.cursor,
+          merge: col.merge
+        }
+      }
+    })
+  })
+
+  return result
+}
 
 
 /***/ })

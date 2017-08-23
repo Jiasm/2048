@@ -18,19 +18,19 @@ export default class GameController extends Base {
 
     let self = this
 
-    window.addEventListener('keyup', ({keyCode}) => {
+    window.addEventListener('keyup', async ({keyCode}) => {
       switch (keyCode) {
         case 87: // 上
-          self.move({direction: 'top'})
+          await self.move({direction: 'top'})
           break
         case 68: // 右
-          self.move({direction: 'right'})
+          await self.move({direction: 'right'})
           break
         case 83: // 下
-          self.move({direction: 'bottom'})
+          await self.move({direction: 'bottom'})
           break
         case 65: // 左
-          self.move({direction: 'left'})
+          await self.move({direction: 'left'})
           break
       }
     })
@@ -52,7 +52,7 @@ export default class GameController extends Base {
         // operateTime = new Date()
       })
 
-      window.addEventListener('touchend', (e) => {
+      window.addEventListener('touchend', async (e) => {
         endPoint = {
           x: e.changedTouches[0].screenX,
           y: e.changedTouches[0].screenY
@@ -70,16 +70,16 @@ export default class GameController extends Base {
           if (maxOffset > 10) {
             switch (maxOffset) {
               case topOffset: // 上
-                self.move({direction: 'top'})
+                await self.move({direction: 'top'})
                 break
               case rightOffset: // 右
-                self.move({direction: 'right'})
+                await self.move({direction: 'right'})
                 break
               case bottomOffset: // 下
-                self.move({direction: 'bottom'})
+                await self.move({direction: 'bottom'})
                 break
               case leftOffset: // 左
-                self.move({direction: 'left'})
+                await self.move({direction: 'left'})
                 break
             }
 
@@ -96,13 +96,13 @@ export default class GameController extends Base {
     }
   }
 
-  start () {
+  async start () {
     let matrix = this.matrix = this.game.start()
-    this.gameRender.render({matrix})
+    await this.gameRender.render({matrix})
   }
 
-  move ({direction}) {
+  async move ({direction}) {
     let matrix = this.matrix = this.game.move({direction})
-    this.gameRender.render({matrix})
+    await this.gameRender.render({matrix})
   }
 }

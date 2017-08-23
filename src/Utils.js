@@ -1,5 +1,5 @@
 export function logMatrix (arr) {
-  log(JSON.stringify(arr).replace(/(],)/g, '],\n').replace(/\[|\]/g, '').replace(/,/g, '|') + '| ')
+  log(JSON.stringify(arr.map(row => row.map(col => col.value))).replace(/(],)/g, '],\n').replace(/\[|\]/g, '').replace(/,/g, '|') + '| ')
 }
 
 export function log (...arg) {
