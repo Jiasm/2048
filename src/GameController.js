@@ -83,7 +83,7 @@ export default class GameController extends Base {
                 break
             }
 
-            if (!self.canMove()) {
+            if (!this.game.canMove()) {
               log('游戏结束')
               alert('游戏结束')
             }

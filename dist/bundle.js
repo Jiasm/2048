@@ -2836,9 +2836,24 @@ const defaultVals = [{
   background: '#edc12f',
   label: 2048,
   color: '#fff'
+}, {
+  background: '#3c3a32',
+  label: 4096,
+  color: '#f9f6f2'
+}, {
+  background: '#3c3a32',
+  label: 4096,
+  color: '#f9f6f2'
 }]
 /* harmony export (immutable) */ __webpack_exports__["c"] = defaultVals;
 
+
+// 添加一些极限key。。。
+// 最大可以拼到4194304 如果真的到了。。我觉得你应该是单身
+new Array(10).fill(0).forEach((_, index) => {
+  let last = defaultVals[defaultVals.length - 1]
+  defaultVals.push(Object.assign({}, last, { label: +last.label * 2 }))
+})
 
 const directionMap = {
   top: 'top',
@@ -9198,11 +9213,23 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
 
 window.debug = true
+
+let $canvas = document.querySelector('#game-canvas')
+
 let gameController = __WEBPACK_IMPORTED_MODULE_0__GameController__["a" /* default */].init({
   size: 6,
-  ele: document.querySelector('#game-canvas'),
+  ele: $canvas,
   win: window
 })
+
+let {width, height} = getComputedStyle(document.body)
+
+let canvasWidth = Math.min(parseInt(width), parseInt(height))
+
+console.log(canvasWidth)
+
+$canvas.style.width = `${canvasWidth}px`
+$canvas.style.height = `${canvasWidth}px`
 
 gameController.start()
 
@@ -9302,7 +9329,7 @@ class GameController extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default 
                 break
             }
 
-            if (!self.canMove()) {
+            if (!this.game.canMove()) {
               Object(__WEBPACK_IMPORTED_MODULE_4__Utils__["a" /* log */])('游戏结束')
               alert('游戏结束')
             }
@@ -9694,7 +9721,7 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
     // 暂时直接除以size 后期要改为正方形的
     this.itemWidth = (ele.width - gap * 2) / size
     this.itemHeight = (ele.height - gap * 2) / size
-    this.fontSize = this.itemWidth / 2
+    this.fontSize = this.itemWidth
 
     Object(__WEBPACK_IMPORTED_MODULE_2__Utils__["a" /* log */])(`
       itemWidth: ${this.itemWidth}
@@ -9740,7 +9767,9 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
         context.fillRect(x, y, itemWidth, itemHeight)
 
         context.fillStyle = itemInfo.color
-        context.font = `${fontSize}px sans-serif`
+
+        let font = fontSize / (Math.max(String(itemInfo.label).length - 1, 2))
+        context.font = `${font}px sans-serif`
         context.textAlign = 'center'
         context.textBaseline = 'middle'
         context.fillText(itemInfo.label, x + itemWidth / 2, y + itemHeight / 2)

@@ -15,7 +15,7 @@ export default class GameRender extends Base {
     // 暂时直接除以size 后期要改为正方形的
     this.itemWidth = (ele.width - gap * 2) / size
     this.itemHeight = (ele.height - gap * 2) / size
-    this.fontSize = this.itemWidth / 2
+    this.fontSize = this.itemWidth
 
     log(`
       itemWidth: ${this.itemWidth}
@@ -61,7 +61,9 @@ export default class GameRender extends Base {
         context.fillRect(x, y, itemWidth, itemHeight)
 
         context.fillStyle = itemInfo.color
-        context.font = `${fontSize}px sans-serif`
+
+        let font = fontSize / (Math.max(String(itemInfo.label).length - 1, 2))
+        context.font = `${font}px sans-serif`
         context.textAlign = 'center'
         context.textBaseline = 'middle'
         context.fillText(itemInfo.label, x + itemWidth / 2, y + itemHeight / 2)

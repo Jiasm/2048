@@ -55,7 +55,22 @@ export const defaultVals = [{
   background: '#edc12f',
   label: 2048,
   color: '#fff'
+}, {
+  background: '#3c3a32',
+  label: 4096,
+  color: '#f9f6f2'
+}, {
+  background: '#3c3a32',
+  label: 4096,
+  color: '#f9f6f2'
 }]
+
+// 添加一些极限key。。。
+// 最大可以拼到4194304 如果真的到了。。我觉得你应该是单身
+new Array(10).fill(0).forEach((_, index) => {
+  let last = defaultVals[defaultVals.length - 1]
+  defaultVals.push(Object.assign({}, last, { label: +last.label * 2 }))
+})
 
 export const directionMap = {
   top: 'top',
