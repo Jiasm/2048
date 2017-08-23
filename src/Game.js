@@ -1,5 +1,5 @@
 import Base from './Base'
-import {logMatrix} from './Utils'
+import {log, logMatrix} from './Utils'
 import {defaultConfig, directionMap} from './Config'
 
 export default class Game extends Base {
@@ -27,16 +27,35 @@ export default class Game extends Base {
   }
 
   /**
+   * 返回是否可以移动
+   * 如果矩阵中还存在空值，表示可以移动
+   * 否则意味着游戏结束
+   * @return {Boolean}
+   */
+  canMove () {
+    return getEmptyMatrixItems({
+      matrix: this.matrix
+    })
+  }
+
+  /**
    * 移动矩阵
    * @param  {String} direction 移动的方向
    * @return {Array} 矩阵数据
    * @api    public
    */
   move ({direction}) {
-    let matrix = moveMatrix({
+    let {matrix, canMove} = moveMatrix({
       direction: directionMap[direction],
       matrix: this.matrix
     })
+
+    // 如果该方向的移动没有任何改变，则直接跳过
+    if (!canMove) {
+      log('该方向无可移动方块')
+      return matrix
+    }
+
     this.matrix = matrix = addItem2Matrix({matrix})
 
     logMatrix(matrix)
@@ -88,6 +107,8 @@ function moveMatrix ({direction, matrix}) {
   // 创建新的容器
   let newMatrix = new Array(len).fill(0).map(_ => new Array(len).fill(0))
 
+  let canMove = false
+
   matrix.forEach((row, rowIndex) => {
     for (let colIndex = end; colIndex > 0;) {
       let item = row[colIndex]
@@ -115,6 +136,7 @@ function moveMatrix ({direction, matrix}) {
           range = colIndex - beforeIndex
           row.splice(beforeIndex, range) // 删除前一个
           row = new Array(range).fill(0).concat(row)  // 将所有元素下标递增
+          canMove = true
           continue
         }
       } else {
@@ -125,6 +147,7 @@ function moveMatrix ({direction, matrix}) {
           colIndex -= range
           row.splice(beforeIndex, range) // 删除前一个
           row = new Array(range).fill(0).concat(row)  // 将所有元素下标递增
+          canMove = true
           continue
         }
       }
@@ -145,7 +168,10 @@ function moveMatrix ({direction, matrix}) {
     newMatrix = rotateMatrix({matrix: newMatrix})
   }
 
-  return newMatrix
+  return {
+    matrix: newMatrix,
+    canMove
+  }
 }
 
 /**
