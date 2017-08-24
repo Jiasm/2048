@@ -9233,6 +9233,10 @@ $canvas.style.height = `${canvasWidth}px`
 
 gameController.start()
 
+window.onerror = function (msg) {
+  alert(msg)
+}
+
 
 /***/ }),
 /* 334 */
@@ -9264,19 +9268,19 @@ class GameController extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default 
 
     let self = this
 
-    window.addEventListener('keyup', async ({keyCode}) => {
+    window.addEventListener('keyup', ({keyCode}) => {
       switch (keyCode) {
         case 87: // 上
-          await self.move({direction: 'top'})
+          self.move({direction: 'top'})
           break
         case 68: // 右
-          await self.move({direction: 'right'})
+          self.move({direction: 'right'})
           break
         case 83: // 下
-          await self.move({direction: 'bottom'})
+          self.move({direction: 'bottom'})
           break
         case 65: // 左
-          await self.move({direction: 'left'})
+          self.move({direction: 'left'})
           break
       }
     })
@@ -9298,7 +9302,7 @@ class GameController extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default 
         // operateTime = new Date()
       })
 
-      window.addEventListener('touchend', async (e) => {
+      window.addEventListener('touchend', (e) => {
         endPoint = {
           x: e.changedTouches[0].screenX,
           y: e.changedTouches[0].screenY
@@ -9316,16 +9320,16 @@ class GameController extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default 
           if (maxOffset > 10) {
             switch (maxOffset) {
               case topOffset: // 上
-                await self.move({direction: 'top'})
+                self.move({direction: 'top'})
                 break
               case rightOffset: // 右
-                await self.move({direction: 'right'})
+                self.move({direction: 'right'})
                 break
               case bottomOffset: // 下
-                await self.move({direction: 'bottom'})
+                self.move({direction: 'bottom'})
                 break
               case leftOffset: // 左
-                await self.move({direction: 'left'})
+                self.move({direction: 'left'})
                 break
             }
 

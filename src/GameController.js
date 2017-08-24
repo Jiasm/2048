@@ -18,19 +18,19 @@ export default class GameController extends Base {
 
     let self = this
 
-    window.addEventListener('keyup', async ({keyCode}) => {
+    window.addEventListener('keyup', ({keyCode}) => {
       switch (keyCode) {
         case 87: // 上
-          await self.move({direction: 'top'})
+          self.move({direction: 'top'})
           break
         case 68: // 右
-          await self.move({direction: 'right'})
+          self.move({direction: 'right'})
           break
         case 83: // 下
-          await self.move({direction: 'bottom'})
+          self.move({direction: 'bottom'})
           break
         case 65: // 左
-          await self.move({direction: 'left'})
+          self.move({direction: 'left'})
           break
       }
     })
@@ -52,7 +52,7 @@ export default class GameController extends Base {
         // operateTime = new Date()
       })
 
-      window.addEventListener('touchend', async (e) => {
+      window.addEventListener('touchend', (e) => {
         endPoint = {
           x: e.changedTouches[0].screenX,
           y: e.changedTouches[0].screenY
@@ -70,16 +70,16 @@ export default class GameController extends Base {
           if (maxOffset > 10) {
             switch (maxOffset) {
               case topOffset: // 上
-                await self.move({direction: 'top'})
+                self.move({direction: 'top'})
                 break
               case rightOffset: // 右
-                await self.move({direction: 'right'})
+                self.move({direction: 'right'})
                 break
               case bottomOffset: // 下
-                await self.move({direction: 'bottom'})
+                self.move({direction: 'bottom'})
                 break
               case leftOffset: // 左
-                await self.move({direction: 'left'})
+                self.move({direction: 'left'})
                 break
             }
 

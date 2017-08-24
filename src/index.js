@@ -20,3 +20,7 @@ $canvas.style.width = `${canvasWidth}px`
 $canvas.style.height = `${canvasWidth}px`
 
 gameController.start()
+
+window.onerror = function (msg) {
+  alert(msg)
+}
