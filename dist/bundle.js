@@ -9216,17 +9216,26 @@ window.debug = true
 
 let $canvas = document.querySelector('#game-canvas')
 
+let size = 6
+
+if (location.search) {
+  let matches = location.search.match(/matrixSize=(\d+)?/)
+
+  if (matches && matches[1]) {
+    size = Number(matches[1]) || 6
+  }
+}
+
 let gameController = __WEBPACK_IMPORTED_MODULE_0__GameController__["a" /* default */].init({
-  size: 6,
+  size,
   ele: $canvas,
   win: window
 })
 
 let {width, height} = getComputedStyle(document.body)
 
+// 将canvas撑满全屏
 let canvasWidth = Math.min(parseInt(width), parseInt(height))
-
-console.log(canvasWidth)
 
 $canvas.style.width = `${canvasWidth}px`
 $canvas.style.height = `${canvasWidth}px`
@@ -9262,7 +9271,7 @@ class GameController extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default 
     this.ele = ele
 
     this.game = new __WEBPACK_IMPORTED_MODULE_1__Game__["a" /* default */]({size})
-    this.gameRender = new __WEBPACK_IMPORTED_MODULE_2__GameRender__["a" /* default */]({ele})
+    this.gameRender = new __WEBPACK_IMPORTED_MODULE_2__GameRender__["a" /* default */]({ele, size})
 
     // event register
 
@@ -9317,6 +9326,7 @@ class GameController extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default 
           let maxOffset = Math.max.apply(null, [topOffset, rightOffset, bottomOffset, leftOffset])
 
           // 防止误触
+          // 只有在偏移量大于10px的时候才会触发移动
           if (maxOffset > 10) {
             switch (maxOffset) {
               case topOffset: // 上
@@ -9482,15 +9492,20 @@ function moveMatrix ({direction, matrix}) {
   let canMove = false
 
   // clean cursor & merge flag
+  // 删除矩阵中的cursor和merge字段
   matrix = matrix.map(row => {
     return row.map(col => {
-      delete col.cursor
-      delete col.merge
+      if (col && col.cursor) {
+        delete col.cursor
+        delete col.merge
+      }
 
       return col
     })
   })
 
+  // 移动的操作，处理矩阵数据
+  // 应该是核心的操作部分了。。。
   matrix.forEach((row, rowIndex) => {
     for (let colIndex = end; colIndex > 0;) {
       let item = row[colIndex]
@@ -9761,7 +9776,7 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
 
     this.$canvas = ele
     this.context = ele.getContext('2d')
-    this.gap = gap || (gap = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].gap)
+    this.gap = gap || (gap = ele.width / 200)
     this.size = size || (size = __WEBPACK_IMPORTED_MODULE_1__Config__["a" /* defaultConfig */].size)
 
     // 计算出一个方块的宽高
@@ -9775,6 +9790,17 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
       itemHeight: ${this.itemHeight}
     `)
   }
+
+  /**
+   * 根据矩阵数据渲染到canvas中
+   * 会自动存储上次的矩阵数据
+   * 并根据数据的type来添加部分item的动画效果
+   * new:  新增的item
+   * move: 移动的item
+   * @param  {Array}   matrix 矩阵数据
+   * @return {Promise}
+   * @api    public
+   */
   async render ({
     matrix
   }) {
@@ -9802,7 +9828,6 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
     await new Promise((resolve) => {
       let animate = () => {
         // render layout
-
         context.fillStyle = __WEBPACK_IMPORTED_MODULE_1__Config__["b" /* defaultRenderConfig */].borderColor
         context.fillRect(0, 0, width, height)
         context.lineWidth = gap
@@ -9819,7 +9844,7 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
             let itemInfo = __WEBPACK_IMPORTED_MODULE_1__Config__["c" /* defaultVals */][col.value]
             let animationInfo = animationPath[col.uuid]
 
-            if (!animationInfo || count < keyOffset && animationInfo.type === 'new') {
+            if (!animationInfo) {
               context.fillStyle = itemInfo.background
               context.fillRect(x, y, itemWidth, itemHeight)
 
@@ -9842,6 +9867,8 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
 
         // 12帧之前移动item 12帧之后显示item
 
+        // 因为canvas渲染机制的问题
+        // 移动的item通过beforeMatrix来，因为新增的肯定不会有移动，但是有移动的可能已经不在最新的矩阵数据了
         let movePercent = Math.min(count / (maxKeyLength - keyOffset), 1)
         beforeMatrix && beforeMatrix.forEach((row, rowIndex) => {
           row.forEach((col, colIndex) => {
@@ -9851,14 +9878,18 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
             let itemInfo = __WEBPACK_IMPORTED_MODULE_1__Config__["c" /* defaultVals */][col.value]
             let animationInfo = animationPath[col.uuid]
 
-            if (!animationInfo) {
-              return
-            } else if (animationInfo.type === 'move') {
-              // 12帧之后隐藏已经没有的item
-              if (count < 6 && !findItem({matrix: beforeMatrix, uuid: col.uuid})) return
+            // 移动的item的动画是从之前的位置移动到现在的位置
+            if (animationInfo && animationInfo.type === 'move') {
+              // `keyOffset`帧之后隐藏已经被合并了的item
+              if (count < keyOffset && !findItem({matrix: beforeMatrix, uuid: col.uuid})) return
+
               // 这个是还存在的item的移动
               let x = animationInfo.colIndex * itemWidth + gap
               let y = animationInfo.rowIndex * itemHeight + gap
+
+              // 如果之前的坐标大于现在的坐标
+              // 则表示为向右|向上移动 数值为递减
+              // 否则为向左|向下移动 数值为递增
               let localX = beforeX > x ? beforeX - (beforeX - x) * movePercent : beforeX + (x - beforeX) * movePercent
               let localY = beforeY > y ? beforeY - (beforeY - y) * movePercent : beforeY + (y - beforeY) * movePercent
 
@@ -9890,6 +9921,7 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
           })
         })
 
+        // 接下来渲染新增的item动画
         let newPercent = (count - keyOffset) / (maxKeyLength - keyOffset)
         count >= keyOffset && matrix.forEach((row, rowIndex) => {
           row.forEach((col, colIndex) => {
@@ -9901,9 +9933,10 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
             let localItemWidth = itemWidth * newPercent
             let localItemHeight = itemHeight * newPercent
 
-            if (!animationInfo) {
-              return
-            } else if (animationInfo.type === 'new') {
+            // 新增的item有一个小小的动画，就是从无到有
+            // 我们先将原点移动到item的正中间。
+            // 然后随着count的变化，修改x|y|width|height四个属性，完成一个显示的动画
+            if (animationInfo && animationInfo.type === 'new') {
               let localX = x + itemWidth / 2 - itemWidth / 2 * newPercent
               let localY = y + itemHeight / 2 - itemHeight / 2 * newPercent
               context.fillStyle = itemInfo.background
@@ -9932,8 +9965,10 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
 
     this.beforeMatrix = matrix.map(row => {
       return row.map(col => {
-        delete col.cursor
-        delete col.merge
+        if (col && col.cursor) {
+          delete col.cursor
+          delete col.merge
+        }
 
         return col
       })
@@ -9948,6 +9983,7 @@ class GameRender extends __WEBPACK_IMPORTED_MODULE_0__Base__["a" /* default */] 
  * @param  {Array}  matrix       目前的矩阵数据
  * @param  {Array}  beforeMatrix 上一次的矩阵数据
  * @return {Object}              生成后的以矩阵item`uuid`为key的JSON数据格式
+ * @api    private
  */
 function buildAnimationPath ({
   matrix,
@@ -10010,6 +10046,12 @@ function buildAnimationPath ({
   return result
 }
 
+/**
+ * 将矩阵数据转换为以uuid开头的一个JSON数据
+ * @param  {Array}  matrix 矩阵数据
+ * @return {Object}
+ * @api    private
+ */
 function buildLocationMap (matrix) {
   let result = {}
   matrix.forEach((row, rowIndex) => {
@@ -10028,6 +10070,14 @@ function buildLocationMap (matrix) {
   return result
 }
 
+/**
+ * 通过UUID获取到矩阵中item的信息
+ * @NOTE: 其实可以通过横纵坐标直接从矩阵中拿到这个item。。。
+ * @param  {Array}  matrix 矩阵数据
+ * @param  {String} uuid   唯一标识
+ * @return {Object}
+ * @api    private
+ */
 function findItem ({matrix, uuid}) {
   let item = null
   matrix.forEach(row => {
