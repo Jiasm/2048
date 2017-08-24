@@ -44,12 +44,11 @@ export default class GameRender extends Base {
 
     let count = 0
     let maxKeyLength = 12
+    let keyOffset = 6
 
     await new Promise((resolve) => {
       let animate = () => {
         // render layout
-
-        let percent = (count / maxKeyLength)
 
         context.fillStyle = defaultRenderConfig.borderColor
         context.fillRect(0, 0, width, height)
@@ -67,7 +66,7 @@ export default class GameRender extends Base {
             let itemInfo = defaultVals[col.value]
             let animationInfo = animationPath[col.uuid]
 
-            if (!animationInfo || count < 6 && animationInfo.type === 'new') {
+            if (!animationInfo || count < keyOffset && animationInfo.type === 'new') {
               context.fillStyle = itemInfo.background
               context.fillRect(x, y, itemWidth, itemHeight)
 
@@ -88,6 +87,9 @@ export default class GameRender extends Base {
         // 然后对有动画的item进行渲染
         // 动画也要分开处理。。先处理移动的动画，然后处理新增的动画
 
+        // 12帧之前移动item 12帧之后显示item
+
+        let movePercent = Math.min(count / (maxKeyLength - keyOffset), 1)
         beforeMatrix && beforeMatrix.forEach((row, rowIndex) => {
           row.forEach((col, colIndex) => {
             let beforeX = colIndex * itemWidth + gap
@@ -95,10 +97,6 @@ export default class GameRender extends Base {
 
             let itemInfo = defaultVals[col.value]
             let animationInfo = animationPath[col.uuid]
-
-            // 12帧之前移动item 12帧之后显示item
-
-            let percent = Math.min(count / (maxKeyLength - 6), 1)
 
             if (!animationInfo) {
               return
@@ -108,8 +106,8 @@ export default class GameRender extends Base {
               // 这个是还存在的item的移动
               let x = animationInfo.colIndex * itemWidth + gap
               let y = animationInfo.rowIndex * itemHeight + gap
-              let localX = beforeX > x ? beforeX - (beforeX - x) * percent : beforeX + (x - beforeX) * percent
-              let localY = beforeY > y ? beforeY - (beforeY - y) * percent : beforeY + (y - beforeY) * percent
+              let localX = beforeX > x ? beforeX - (beforeX - x) * movePercent : beforeX + (x - beforeX) * movePercent
+              let localY = beforeY > y ? beforeY - (beforeY - y) * movePercent : beforeY + (y - beforeY) * movePercent
 
               // 之前是 0 现在是 5
               // 0 < 5
@@ -138,29 +136,30 @@ export default class GameRender extends Base {
             }
           })
         })
-        count >= 6 && matrix.forEach((row, rowIndex) => {
+
+        let newPercent = (count - keyOffset) / (maxKeyLength - keyOffset)
+        count >= keyOffset && matrix.forEach((row, rowIndex) => {
           row.forEach((col, colIndex) => {
-            let percent = ((count - 6) / (maxKeyLength - 6))
             let x = colIndex * itemWidth + gap
             let y = rowIndex * itemHeight + gap
 
             let itemInfo = defaultVals[col.value]
             let animationInfo = animationPath[col.uuid]
-            let localItemWidth = itemWidth * percent
-            let localItemHeight = itemHeight * percent
+            let localItemWidth = itemWidth * newPercent
+            let localItemHeight = itemHeight * newPercent
 
             if (!animationInfo) {
               return
             } else if (animationInfo.type === 'new') {
-              let localX = x + itemWidth / 2 - itemWidth / 2 * percent
-              let localY = y + itemHeight / 2 - itemHeight / 2 * percent
+              let localX = x + itemWidth / 2 - itemWidth / 2 * newPercent
+              let localY = y + itemHeight / 2 - itemHeight / 2 * newPercent
               context.fillStyle = itemInfo.background
               context.fillRect(localX, localY, localItemWidth, localItemHeight)
 
               context.fillStyle = itemInfo.color
 
               let font = fontSize / (Math.max(String(itemInfo.label).length - 1, 2))
-              context.font = `${font * percent}px sans-serif`
+              context.font = `${font * newPercent}px sans-serif`
               context.textAlign = 'center'
               context.textBaseline = 'middle'
               context.fillText(itemInfo.label, localX + localItemWidth / 2, localY + localItemHeight / 2)
