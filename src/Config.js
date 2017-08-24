@@ -59,10 +59,6 @@ export const defaultVals = [{
   background: '#3c3a32',
   label: 4096,
   color: '#f9f6f2'
-}, {
-  background: '#3c3a32',
-  label: 4096,
-  color: '#f9f6f2'
 }]
 
 // 添加一些极限key。。。

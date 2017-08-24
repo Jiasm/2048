@@ -12,7 +12,7 @@ export default class GameController extends Base {
     this.ele = ele
 
     this.game = new Game({size})
-    this.gameRender = new GameRender({ele})
+    this.gameRender = new GameRender({ele, size})
 
     // event register
 
@@ -67,6 +67,7 @@ export default class GameController extends Base {
           let maxOffset = Math.max.apply(null, [topOffset, rightOffset, bottomOffset, leftOffset])
 
           // 防止误触
+          // 只有在偏移量大于10px的时候才会触发移动
           if (maxOffset > 10) {
             switch (maxOffset) {
               case topOffset: // 上
