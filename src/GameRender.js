@@ -67,7 +67,7 @@ export default class GameRender extends Base {
             let itemInfo = defaultVals[col.value]
             let animationInfo = animationPath[col.uuid]
 
-            if (!animationInfo) {
+            if (!animationInfo || count < 6 && animationInfo.type === 'new') {
               context.fillStyle = itemInfo.background
               context.fillRect(x, y, itemWidth, itemHeight)
 
@@ -88,19 +88,40 @@ export default class GameRender extends Base {
         // 然后对有动画的item进行渲染
         // 动画也要分开处理。。先处理移动的动画，然后处理新增的动画
 
-        matrix.forEach((row, rowIndex) => {
+        beforeMatrix && beforeMatrix.forEach((row, rowIndex) => {
           row.forEach((col, colIndex) => {
-            let x = colIndex * itemWidth + gap
-            let y = rowIndex * itemHeight + gap
+            let beforeX = colIndex * itemWidth + gap
+            let beforeY = rowIndex * itemHeight + gap
 
             let itemInfo = defaultVals[col.value]
             let animationInfo = animationPath[col.uuid]
 
+            // 12帧之前移动item 12帧之后显示item
+
+            let percent = Math.min(count / (maxKeyLength - 6), 1)
+
             if (!animationInfo) {
               return
             } else if (animationInfo.type === 'move') {
-              let localX = x
-              let localY = y
+              // 12帧之后隐藏已经没有的item
+              if (count < 6 && !findItem({matrix: beforeMatrix, uuid: col.uuid})) return
+              // 这个是还存在的item的移动
+              let x = animationInfo.colIndex * itemWidth + gap
+              let y = animationInfo.rowIndex * itemHeight + gap
+              let localX = beforeX > x ? beforeX - (beforeX - x) * percent : beforeX + (x - beforeX) * percent
+              let localY = beforeY > y ? beforeY - (beforeY - y) * percent : beforeY + (y - beforeY) * percent
+
+              // 之前是 0 现在是 5
+              // 0 < 5
+              // 0 1 2 3 4 5
+              // =>
+              // 5 + -5 5 + -4 5 + -3 5 + -2 5 + -1 5 + 0
+              //
+              // 之前是 5 现在是 0
+              // 0 > 5
+              // 5 4 3 2 1
+              // 5 - 5 5 - 4 5 - 3 5 - 2 5 - 1 5 - 0
+
               context.fillStyle = itemInfo.background
               context.fillRect(localX, localY, itemWidth, itemHeight)
 
@@ -117,15 +138,16 @@ export default class GameRender extends Base {
             }
           })
         })
-        let localItemWidth = itemWidth * percent
-        let localItemHeight = itemHeight * percent
-        matrix.forEach((row, rowIndex) => {
+        count >= 6 && matrix.forEach((row, rowIndex) => {
           row.forEach((col, colIndex) => {
+            let percent = ((count - 6) / (maxKeyLength - 6))
             let x = colIndex * itemWidth + gap
             let y = rowIndex * itemHeight + gap
 
             let itemInfo = defaultVals[col.value]
             let animationInfo = animationPath[col.uuid]
+            let localItemWidth = itemWidth * percent
+            let localItemHeight = itemHeight * percent
 
             if (!animationInfo) {
               return
@@ -156,7 +178,14 @@ export default class GameRender extends Base {
       requestAnimationFrame(animate)
     })
 
-    this.beforeMatrix = matrix
+    this.beforeMatrix = matrix.map(row => {
+      return row.map(col => {
+        delete col.cursor
+        delete col.merge
+
+        return col
+      })
+    })
   }
 }
 
@@ -197,6 +226,8 @@ function buildAnimationPath ({
         // 说明是通过合并生成的
         // 需要进行额外的处理
         if (item.cursor && item.merge) {
+          // let cursorItem = findItem({matrix: beforeMatrix, uuid: item.cursor})
+          // let mergeItem = findItem({matrix: beforeMatrix, uuid: item.merge})
           result[item.cursor] = {
             type: 'move',
             rowIndex: item.rowIndex,
@@ -209,6 +240,10 @@ function buildAnimationPath ({
           }
         }
       } else {
+        let beforeItem = beforeMatrixPath[uuid]
+
+        // 如果两次坐标一样，说明是没有动
+        if (beforeItem.rowIndex === item.rowIndex && beforeItem.colIndex === item.colIndex) return
         result[uuid] = {
           type: 'move',
           rowIndex: item.rowIndex,
@@ -237,4 +272,19 @@ function buildLocationMap (matrix) {
   })
 
   return result
+}
+
+function findItem ({matrix, uuid}) {
+  let item = null
+  matrix.forEach(row => {
+    if (item) return
+    row.forEach(col => {
+      if (item) return
+      if (col && col.uuid === uuid) {
+        item = col
+      }
+    })
+  })
+
+  return item
 }

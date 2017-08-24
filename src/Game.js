@@ -109,12 +109,19 @@ function moveMatrix ({direction, matrix}) {
 
   let canMove = false
 
+  // clean cursor & merge flag
+  matrix = matrix.map(row => {
+    return row.map(col => {
+      delete col.cursor
+      delete col.merge
+
+      return col
+    })
+  })
+
   matrix.forEach((row, rowIndex) => {
     for (let colIndex = end; colIndex > 0;) {
       let item = row[colIndex]
-
-      delete item.cursor
-      delete item.merge
 
       let beforeIndex = colIndex
       let itemBefore
