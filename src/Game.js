@@ -110,15 +110,20 @@ function moveMatrix ({direction, matrix}) {
   let canMove = false
 
   // clean cursor & merge flag
+  // 删除矩阵中的cursor和merge字段
   matrix = matrix.map(row => {
     return row.map(col => {
-      delete col.cursor
-      delete col.merge
+      if (col && col.cursor) {
+        delete col.cursor
+        delete col.merge
+      }
 
       return col
     })
   })
 
+  // 移动的操作，处理矩阵数据
+  // 应该是核心的操作部分了。。。
   matrix.forEach((row, rowIndex) => {
     for (let colIndex = end; colIndex > 0;) {
       let item = row[colIndex]
