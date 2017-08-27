@@ -4,7 +4,8 @@
   "description": "`2048`game",
   "main": "index.js",
   "scripts": {
-    "start": "anywhere -p 8080"
+    "start": "anywhere -p 8080",
+    "watch": "webpack -w"
   },
   "repository": {
     "type": "git",
