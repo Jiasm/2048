@@ -1,7 +1,7 @@
 # 2048
 `2048`game
 
-live demo: http://jiasm.org/2048
+live demo: http://blog.jiasm.org/2048
 
 ## Project structure
 
